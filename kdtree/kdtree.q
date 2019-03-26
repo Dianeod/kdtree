@@ -2,46 +2,44 @@
 
 \d .kd
 
-tree.insertKd1:{[diml;kd;sample2;L;clust]
+tree.insertKd1:{[diml;kd;samp;L;cl]
    /check if its to the left or right of initial cluster in tree
 
- dir:{(first x[0]`idx)>=0}{[sample2;kd;x] a:x[0];
-  $[first (sample2[first x[0]`dim]>(first x[0]`rDim));
+ dir:{(first x[0]`idx)>=0}{[samp;kd;nn] a:nn[0];
+  $[first (samp[first nn[0]`dim]>(first nn[0]`rDim));
   i:update left:enlist 0,right:enlist 1 from exec idx,dim,rep,rDim from kd where right=1,parent=first a`idx;
   i:update left:enlist 1,right:enlist 0 from exec idx,dim,rep,rDim from kd where left=1,parent=first a`idx];
-  (i;a)}[sample2;kd]/(i;i:exec from kd where parent=0,left=0,right=0); /insert cluster into the tree by looking at splitting dimension of each node &going left or right
+  (i;a)}[samp;kd]/(i;i:exec from kd where parent=0,left=0,right=0); /insert cluster into the tree by looking at splitting dimension of each node &going left or right
 
 
- i:dir[0];
- a:dir[1];
- dim:diml (first a`dim)+1; /get its new splitting dimension
+ ii:dir[0];
+ par:dir[1];
+ dim:diml (first par`dim)+1; /get its new splitting dimension
 
 
- root:kd upsert flip update idx:(max kd`idx)+1,initi:L,clust:clust,rep:enlist sample2,
-    rDim:enlist sample2[dim],dim:enlist dim,valid:1b,
-    parent:enlist first a`idx from exec left,right from i; /update the info of new node into tree
+ root:kd upsert flip update idx:(max kd`idx)+1,initi:L,clust:cl,rep:enlist samp,
+    rDim:enlist samp[dim],dim:enlist dim,valid:1b,
+    parent:enlist first par`idx from exec left,right from ii; /update the info of new node into tree
  root}
 
 /insert cluster into tree
 
-tree.insertKd:{[diml;kd;sample2;L;cl]
+tree.insertKd:{[diml;kd;samp;L;cl]
    /check if its to the left or right of initial cluster in tree
 
- dir:{(first x[0]`idx)>=0}{[sample2;kd;x] a:x[0];
-  $[first (sample2[first x[0]`dim]>(first x[0]`rDim));
-  i:update left:enlist 0,right:enlist 1 from exec idx,dim,rep,rDim from kd where right=1,parent=first a`idx,valid;
+ dir:{(first x[0]`idx)>=0}{[samp;kd;nn] a:nn[0];
+  $[first (samp[first nn[0]`dim]>(first nn[0]`rDim));
+  i:update left:enlist 0,right:enlist 1 from exec idx,dim,rep,rDim from kd where right=1,parent=first a`idx,valid; /a is the previous pt, while i is the next pt in the tree to do split on
   i:update left:enlist 1,right:enlist 0 from exec idx,dim,rep,rDim from kd where left=1,parent=first a`idx,valid];
-  (i;a)}[sample2;kd]/(i;i:exec from kd where parent=0,left=0,right=0); /insert cluster into the tree by looking at splitting dimension of each node &going left or right
+  (i;a)}[samp;kd]/(i;i:exec from kd where parent=0,left=0,right=0); /insert cluster into the tree by looking at splitting dimension of each node &going left or right
 
- i:dir[0];
- left1:i`left;
- right1:i`right;
- a:dir[1];
- dim:diml (first a`dim)+1; /get its new splitting dimension
- b:exec idx from kd where valid=0b;
- root:update idx:(max kd`idx)+1, initi:L, clust:cl,rep:enlist sample2,
-    valid:enlist 1b,dim:dim, rDim:sample2[dim],left:left1,right:right1,
-    parent:a`idx from kd where idx=first b;  /update the info of new node into tree
+ ii:dir[0];
+ par:dir[1];
+ dim:diml (first par`dim)+1; /get its new splitting dimension
+ nval:exec idx from kd where not valid;
+ root:update idx:(max kd`idx)+1, initi:L, clust:cl,rep:enlist samp,
+    valid:enlist 1b,dim:dim, rDim:samp[dim],left:ii[`left],right:ii[`right],
+    parent:par`idx from kd where idx=first nval;  /update the info of new node into tree
 
  root}
 
@@ -52,35 +50,35 @@ tree.distC:{[kd;pt]
 
  distCalc:{[kd;query;bestD]
 
- X:bestD[3]; / nodes that were already searched, not to be searched again
+ prevn:bestD[3]; / nodes that were already searched, not to be searched again
 
  cl:bestD[5]; / what cluster the node belongs to, as not to search any points in the same cluster
- n:bestD[1]; /nodes to search
- a:n where {[cl;kd;x](first exec clust from kd where idx=x,valid)<>cl}[cl;kd]each n; /nodes to search that arent in the same cluster
+ nn:bestD[1]; /nodes to search
+ newn:nn where {[cl;kd;x](first exec clust from kd where idx=x,valid)<>cl}[cl;kd]each nn; /nodes to search that arent in the same cluster
 
- newD:imins,a i?imins:min i:{[kd;query;x]
-    sum m*m:(raze exec rep from kd where idx=x,valid)-query}[kd;query] each a; /get minimum dist of all searched nodes
+ newD:imins,newn ii?imins:min ii:{[kd;query;x]
+    sum m*m:(raze exec rep from kd where idx=x,valid)-query}[kd;query] each newn; /get minimum dist of all searched nodes
 
-  $[(newD[0]<bestD[0])&(count a)<>0;(bestD[0]:newD[0];bestD[2]:newD[1])
+  $[(newD[0]<bestD[0])&(count newn)<>0;(bestD[0]:newD[0];bestD[2]:newD[1])
      ;(bestD:bestD)]; /if new dist is less than current best dist, then that becomes new best dist
 
-  axisD:(raze {[kd;bestD;query;x] $[(m*m:
-    (first exec rDim from kd where idx=x,valid)-
-    query(first exec dim from kd where idx=x,valid))<=bestD[0];
-    (exec idx from kd where parent=x,valid),exec parent from kd where idx=x,valid;
-    (query(first exec dim from kd where idx=x,valid))<
-    first exec rDim from kd where idx=x,valid;
-    (exec idx from kd where parent=x,left=1,valid),exec parent from kd where idx=x,valid;
-    (exec idx from kd where parent=x,right=1,valid),exec parent from kd where idx=x,valid]
-    }[kd;bestD;query]each n)except bestD[3]:X,n; /get dists between node and search pts based on splitting dimension.
+  axisD:(raze {[kd;bestD;query;nn] $[(m*m:
+    (first exec rDim from kd where idx=nn,valid)-
+    query(first exec dim from kd where idx=nn,valid))<=bestD[0];
+    (exec idx from kd where parent=nn,valid),exec parent from kd where idx=nn,valid;
+    (query(first exec dim from kd where idx=nn,valid))<
+    first exec rDim from kd where idx=nn,valid;
+    (exec idx from kd where parent=nn,left=1,valid),exec parent from kd where idx=nn,valid;
+    (exec idx from kd where parent=nn,right=1,valid),exec parent from kd where idx=nn,valid]
+    }[kd;bestD;query]each nn)except bestD[3]:prevn,nn; /get dists between node and search pts based on splitting dimension.
     /if =< than best Dist, than search the children of that node &parents.
     /Go up the tree and to the left/right based on whether that pt is <or> search pt
 
  (bestD[0];distinct axisD;bestD[2];bestD[3];bestD[4];cl)};
- dist:{[distCalc;kd;X] ({(count x[1])<>0}distCalc[kd;
-    raze exec rep from kd where idx=X,valid]/(0W;
-    (raze (exec idx from kd where parent=X,valid),exec parent from kd where idx=X,valid)except X;X;X;X
-    ;first exec clust from kd where idx=X))
+ dist:{[distCalc;kd;pts] ({(count x[1])<>0}distCalc[kd;
+    raze exec rep from kd where idx=pts,valid]/(0W;
+    (raze (exec idx from kd where parent=pts,valid),exec parent from kd where idx=pts,valid)except pts;pts;pts;pts
+    ;first exec clust from kd where idx=pts))
     }[distCalc;kd;pt];
 
     kdC:update closDist:dist[0],closIdx:dist[2] from kd where idx=pt; /update new closDist and idx in tree

@@ -25,25 +25,29 @@ cure.clust:{[sample;numR;com;diml;kd]
      }[sample;x] each maxMean}[sample;x]each maxIdx:idxs except x}[sample;idxs]/maxFromMean; /get the representative points from the cluster by choosing the most spread out points
 
  rep:(rep*1-com)+\:com*mean; /move it towards the centre
- a:{[rep;x]min (sum each x*x:rep-\:x)}[rep]each (exec rep from deleteClust where valid); /get the distances from the new rep points to every other rep point in the tree 
- j3:(exec idx from deleteClust where valid)[n:where a<(exec closDist from deleteClust where valid)]; /get the index of the pts that are now closer to the new rep pts than their previous closest pts
- b: (exec idx from deleteClust where valid)where a=c:min a; /get the idx of the closest pnt to any of the new rep points
- insertClust:tree.insertKd[diml]/[deleteClust;rep;sami;(first idxs)]; / insert the new rep pts into the tree
- insertClust2:$[0=count[j3];insertClust;{[n;j3;a;insertClust;x] update closDist:a(n x)
-  ,closIdx:enlist (max (insertClust`idx)) from
-    insertClust where idx=j3(x)}[n;j3;a]/[insertClust;til count j3]]; /update the tree if the new rep pts are closest to any other clusters
 
- clustDist:update closIdx:first b,closDist:c from insertClust2 where clust=first idxs; /update the closest pt to the new rep pt
- j5:exec idx from insertClust2 where clust=first idxs,valid; /get idx of all new inserted rep pts
- j4:(exec idx from clustDist where initi in j0,valid) except j5; /the index of pts who use to have the rep pts as their closestidx
+ repdist:{[rep;x]min (sum each x*x:rep-\:x)}[rep]each (exec rep from deleteClust where valid); /get the distances from the new rep points to every other rep point in the tree 
+
+ j3:(exec idx from deleteClust where valid)[n:where repdist<(exec closDist from deleteClust where valid)]; /get the index of the pts that are now closer to the new rep pts than their previous closest pts
+
+ nclos:(exec idx from deleteClust where valid)where repdist=brep:min repdist; /get the idx of the closest pt to any of the new rep points
+
+ insertCl:tree.insertKd[diml]/[deleteClust;rep;sami;(first idxs)]; / insert the new rep pts into the tree
+ insertCl2:$[0=count[j3];insertCl;{[n;j3;a;insertCl;x] update closDist:a(n x)
+  ,closIdx:enlist (max (insertCl`idx)) from
+    insertCl where idx=j3(x)}[n;j3;repdist]/[insertCl;til count j3]]; /update the tree if the new rep pts are closest to any other clusters
+
+ clustD:update closIdx:first nclos,closDist:brep from insertCl2 where clust=first idxs; /update the closest pt to the new rep pt
+ j5:exec idx from insertCl2 where clust=first idxs,valid; /get idx of all new inserted rep pts
+ j4:(exec idx from clustD where initi in j0,valid) except j5; /the index of pts who use to have the rep pts as their closestidx
  
- recalc:tree.distC/[clustDist;j4]; /recalc these new distances
+ recalc:tree.distC/[clustD;j4]; /recalc these new distances
  
  insertIdx:enlist idxs; /get the initial indexes of pts in the new merged cluster
 
-  kd:{[insertIdx;kd;x] update clustIdx:(insertIdx) from kd where initi=x,valid}[insertIdx]/[recalc;sami]; /update these into kdtree
+ kd:{[insertIdx;kd;x] update clustIdx:(insertIdx) from kd where initi=x,valid}[insertIdx]/[recalc;sami]; /update these into kdtree
   
-  kd}
+ kd}
 
 
 /Create tree, search init nearest neighbours
