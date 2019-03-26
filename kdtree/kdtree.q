@@ -2,7 +2,7 @@
 
 \d .kd
 
-tree.insertKd1:{[kd;sample2;L;clust]
+tree.insertKd1:{[diml;kd;sample2;L;clust]
    /check if its to the left or right of initial cluster in tree
 
  dir:{(first x[0]`idx)>=0}{[sample2;kd;x] a:x[0];
@@ -14,7 +14,7 @@ tree.insertKd1:{[kd;sample2;L;clust]
 
  i:dir[0];
  a:dir[1];
- dim:((first a`dim)+1)mod 2; /get its new splitting dimension
+ dim:diml (first a`dim)+1; /get its new splitting dimension
 
 
  root:kd upsert flip update idx:(max kd`idx)+1,initi:L,clust:clust,rep:enlist sample2,
@@ -24,7 +24,7 @@ tree.insertKd1:{[kd;sample2;L;clust]
 
 /insert cluster into tree
 
-tree.insertKd:{[kd;sample2;L;cl]
+tree.insertKd:{[diml;kd;sample2;L;cl]
    /check if its to the left or right of initial cluster in tree
 
  dir:{(first x[0]`idx)>=0}{[sample2;kd;x] a:x[0];
@@ -37,7 +37,7 @@ tree.insertKd:{[kd;sample2;L;cl]
  left1:i`left;
  right1:i`right;
  a:dir[1];
- dim:((first a`dim)+1)mod 2; /get its new splitting dimension
+ dim:diml (first a`dim)+1; /get its new splitting dimension
  b:exec idx from kd where valid=0b;
  root:update idx:(max kd`idx)+1, initi:L, clust:cl,rep:enlist sample2,
     valid:enlist 1b,dim:dim, rDim:sample2[dim],left:left1,right:right1,
@@ -68,10 +68,10 @@ tree.distC:{[kd;pt]
     (first exec rDim from kd where idx=x,valid)-
     query(first exec dim from kd where idx=x,valid))<=bestD[0];
     (exec idx from kd where parent=x,valid),exec parent from kd where idx=x,valid;
-    $[(query(first exec dim from kd where idx=x,valid))<
+    (query(first exec dim from kd where idx=x,valid))<
     first exec rDim from kd where idx=x,valid;
     (exec idx from kd where parent=x,left=1,valid),exec parent from kd where idx=x,valid;
-    (exec idx from kd where parent=x,right=1,valid),exec parent from kd where idx=x,valid]]
+    (exec idx from kd where parent=x,right=1,valid),exec parent from kd where idx=x,valid]
     }[kd;bestD;query]each n)except bestD[3]:X,n; /get dists between node and search pts based on splitting dimension.
     /if =< than best Dist, than search the children of that node &parents.
     /Go up the tree and to the left/right based on whether that pt is <or> search pt
