@@ -101,8 +101,8 @@ tree.deleteN:{[kd;X]
        parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,
 	valid}[kd]\first exec idx from kd where parent=X,left=1,valid; / if has no right child then left child replaces
     raze {[kd;x] (count exec idx from kd where
-       parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,valid}[kd]\
-    first exec idx from kd where parent=X,right=1,valid]; / get all the right children if there
+       parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,valid
+   }[kd]\first exec idx from kd where parent=X,right=1,valid]; / get all the right children if there
 
   newP:mindim repPt?min repPt:(raze{[kd;x] exec rep from kd where idx=x,valid}[kd]each mindim)axis; /the min value of rep pts from mindim based on splitting dimension
   newNode:select from kd where idx=newP,valid; /get info from kdtree of newP
