@@ -98,8 +98,8 @@ tree.deleteN:{[kd;X]
 
   mindim:$[(count exec idx from kd where right=1,parent=X,valid)=0;
     raze {[kd;x](count exec idx from kd where
-       parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,valid}[kd]\
-    first exec idx from kd where parent=X,left=1,valid; / if has no right child then left child replaces
+       parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,
+	valid}[kd]\first exec idx from kd where parent=X,left=1,valid; / if has no right child then left child replaces
     raze {[kd;x] (count exec idx from kd where
        parent=first x,valid)<>0}[kd]{[kd;x]raze exec idx from kd where parent in x,valid}[kd]\
     first exec idx from kd where parent=X,right=1,valid]; / get all the right children if there
